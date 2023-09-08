@@ -146,12 +146,12 @@ export async function postPoll(poll: Poll): Promise<Poll> {
 
   if (poll.createdBy) {
     await app.client.chat.postEphemeral({
-      text: `Poll successfully created! Run \`/dinopoll-toggle ${poll.id}\` to close the poll once you're done.`,
+      text: `Poll successfully created! Run \`/denopoll-toggle ${poll.id}\` to close the poll once you're done.`,
       blocks: JSXSlack(
         <Blocks>
           <Section>
             Poll successfully created! Run{" "}
-            <code>/dinopoll-toggle {poll.id}</code> to close the poll once
+            <code>/denopoll-toggle {poll.id}</code> to close the poll once
             you're done.
             <Button actionId="dinoFact">:sauropod:</Button>
           </Section>
@@ -180,7 +180,7 @@ app.action("dinoFact", async ({ ack, body, client }) => {
   });
 });
 
-app.command("/dinopoll", async ({ client, ack, command }) => {
+app.command("/denopoll", async ({ client, ack, command }) => {
   await client.views.open({
     trigger_id: command.trigger_id,
     view: createPollModal(command.channel_id, command.text),
@@ -265,7 +265,7 @@ app.view("create", async ({ ack, body, view }) => {
   await postPoll(poll);
 });
 
-app.command("/dinopoll-toggle", async ({ ack, command }) => {
+app.command("/denopoll-toggle", async ({ ack, command }) => {
   try {
     // Find poll
     const poll = await prisma.poll.findFirst({

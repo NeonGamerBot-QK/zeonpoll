@@ -1,9 +1,9 @@
-FROM node:15-alpine
+FROM node:16-alpine
 
 WORKDIR /usr/src/app
 
 COPY . .
 
-RUN yarn install
+RUN npm install
 
-CMD ["yarn", "dev"]
+CMD ["npm", "run", "dev"]

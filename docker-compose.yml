@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: dev.Dockerfile
     ports:
-      - "3000:3000"
+      - "2345:2345"
     volumes:
       - ".:/usr/src/app"
     env_file: .env
@@ -27,12 +27,5 @@ services:
       DATABASE_URL: postgres://postgres:postgres@db:5432/dinopoll?sslmode=disable
     depends_on:
       - db
-  ngrok:
-    image: wernight/ngrok
-    environment:
-      NGROK_PORT: main:3000
-    ports:
-      - "3001:4040"
-    env_file: .ngrok.env
 volumes:
   db_volume:
