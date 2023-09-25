@@ -61,7 +61,14 @@ receiver.router.post("/create", express.json(), async (req, res) => {
       include: { options: { select: { id: true, name: true } } },
     });
 
-    const { timestamp } = await postPoll(poll);
+    let timestamp;
+    try {
+      const p = await postPoll(poll);
+      timestamp = p.timestamp;
+    } catch (e) {
+      console.error(`Error when posting poll: ${e}`);
+      return;
+    }
     poll.timestamp = timestamp;
 
     res.json({
@@ -262,7 +269,12 @@ app.view("create", async ({ ack, body, view }) => {
     },
   });
 
-  await postPoll(poll);
+  try {
+    await postPoll(poll);
+  } catch (e) {
+    console.error(`Error when posting poll: ${e}`);
+    return;
+  }
 });
 
 app.command("/denopoll-toggle", async ({ ack, command }) => {
