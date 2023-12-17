@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { App, BlockAction, BlockElementAction, Option } from "@slack/bolt";
+import { App, BlockAction, BlockElementAction, Option, MessageShortcut } from "@slack/bolt";
 import JSXSlack, { Input, Modal, Section } from "jsx-slack";
 
 import createPollModal from "./modal";
@@ -265,6 +265,45 @@ app.action("togglePoll", async ({ ack, client, respond, ...args }) => {
   }
 });
 
+app.shortcut("message-toggle", async ({ack, client, ...args }) => {
+  await ack();
+
+  const shortcut = args.body as MessageShortcut;
+
+  const result = await client.views.open({
+    trigger_id: shortcut.trigger_id,
+    view: {
+      callback_id: "message-toggle",
+      private_metadata: JSON.stringify({
+        messageId: shortcut.message.ts
+      }),
+      type: "modal",
+      title: {
+        type: "plain_text",
+        text: "My App",
+        emoji: true
+      },
+      submit: {
+        type: "plain_text",
+        text: "Submit"
+      },
+      close: {
+        type: "plain_text",
+        text: "Cancel"
+      },
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "Are you sure you want to toggle this poll?"
+          }
+        }
+      ]
+    }
+  });
+})
+
 app.view("create", async ({ ack, body, view }) => {
   const values = view.state.values;
   const othersCanAdd = values.options.options.selected_options!.some(
@@ -383,6 +422,24 @@ app.view("addOption", async ({ view, body, ack }) => {
 
   await refreshPoll(poll.id);
 });
+
+app.view("message-toggle", async ({ ack, body, view }) => {
+  await ack();
+
+  const messageId = JSON.parse(view.private_metadata).messageId;
+
+  const poll = await prisma.poll.findFirst({
+    where: {
+      timestamp: messageId,
+    },
+  });
+
+  if (!poll) {
+    return;
+  }
+
+  await togglePoll(poll.id.toString(), body.user.id);
+})
 
 async function main() {
   await app.start(parseInt(process.env.PORT as string) || 3000);
