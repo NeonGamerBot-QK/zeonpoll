@@ -3,7 +3,7 @@ services:
   main:
     build:
       context: .
-      dockerfile: dev.Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "2345:2345"
     volumes:
@@ -11,6 +11,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/dinopoll
+    restart: always
   db:
     image: postgres:alpine
     environment:
