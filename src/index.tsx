@@ -196,6 +196,64 @@ app.command("/denopoll", async ({ client, ack, command }) => {
   await ack();
 });
 
+app.command("/denopolls", async ({ ack, respond, command }) => {
+  await ack();
+
+  const polls = await prisma.poll.findMany({
+    where: {
+      createdBy: command.user_id,
+      open: true
+    },
+  });
+
+  let msg: { text: string, blocks: any } = {
+    text: "",
+    blocks: undefined
+  };
+
+  if (polls.length === 0) {
+    msg.text = "You don't have any open polls.";
+  } else {
+    msg.text = `You have ${polls.length} open polls: `;
+    msg.blocks = []
+    
+    msg.blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: msg.text
+      }
+    });
+    msg.blocks.push({
+      type: "divider"
+    });
+
+    polls.sort((a, b) => a.createdOn.getTime() - b.createdOn.getTime());
+
+    for (const poll of polls) {
+      msg.blocks.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `<https://hackclub.slack.com/archives/${poll.channel}/p${poll.timestamp?.split(".").join("")}|_${poll.id}_>: *${poll.title}*`
+        },
+        accessory: {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "Close",
+            emoji: true
+          },
+          value: poll.id.toString(),
+          action_id: "togglePoll"
+        }
+      });
+    }
+  }
+
+  await respond(msg);
+});
+
 app.view("create", async ({ ack, body, view }) => {
   const values = view.state.values;
   const othersCanAdd = values.options.options.selected_options!.some(
@@ -277,17 +335,17 @@ app.view("create", async ({ ack, body, view }) => {
   }
 });
 
-app.command("/denopoll-toggle", async ({ ack, command }) => {
+async function togglePoll(id: string, user: string) {
   try {
-    // Find poll
     const poll = await prisma.poll.findFirst({
       where: {
-        id: parseInt(command.text),
-        createdBy: command.user_id,
+        id: parseInt(id),
+        createdBy: user,
       },
     });
+
     if (!poll) {
-      return await ack("poll not found.");
+      return null;
     }
 
     await prisma.poll.update({
@@ -300,6 +358,18 @@ app.command("/denopoll-toggle", async ({ ack, command }) => {
     });
 
     await refreshPoll(poll.id);
+    return poll;
+  } catch (e) {
+    throw e
+  }
+}
+
+app.command("/denopoll-toggle", async ({ ack, command }) => {
+  try {
+    const toggle = await togglePoll(command.text, command.user_id);
+    if (toggle == null) {
+      return await ack("poll not found.");
+    }
 
     await ack("success!");
   } catch (e) {
@@ -441,6 +511,26 @@ app.action("modalAddOption", async ({ ack, client, ...args }) => {
     view_id: body.view?.id,
     view: createPollModal(channel, "", optionCount + 1),
   });
+});
+
+app.action("togglePoll", async ({ ack, client, respond, ...args }) => {
+  await ack();
+
+  const body = args.body as BlockAction;
+
+  // @ts-ignore
+  const poll = body.actions[0].value
+
+  try {
+    const toggle = await togglePoll(poll, body.user.id);
+    if (toggle === null) {
+      return await respond("poll not found.");
+    }
+
+    respond("success!");
+  } catch (e) {
+    respond("something went wrong :cry:")
+  }
 });
 
 app.view("addOption", async ({ view, body, ack }) => {
