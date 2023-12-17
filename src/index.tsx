@@ -1,190 +1,18 @@
 import "dotenv/config";
 
-import {
-  App,
-  BlockAction,
-  BlockElementAction,
-  ExpressReceiver,
-  Option,
-} from "@slack/bolt";
-
-import express from "express";
+import { App, BlockAction, BlockElementAction, Option } from "@slack/bolt";
+import JSXSlack, { Input, Modal, Section } from "jsx-slack";
 
 import createPollModal from "./modal";
-
-import message from "./message";
 import { checkInput } from "./util";
-import JSXSlack, {
-  Blocks,
-  Button,
-  Context,
-  Input,
-  Modal,
-  Section,
-} from "jsx-slack";
 import { randomDinoFact } from "./dinoFacts";
-import { PollWithOptions, prisma } from "./prisma";
-import { Poll } from "@prisma/client";
+import { prisma } from "./prisma";
+import receiver from "./express";
+import { postPoll, refreshPoll, togglePoll } from "./pollUtil";
 
-const receiver = new ExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET as string,
-});
-
-receiver.router.post("/create", express.json(), async (req, res) => {
-  try {
-    const { title, options, channel, othersCanAdd, multipleVotes } = req.body;
-    const tok = req.headers.authorization?.slice("Bearer ".length);
-    if (!tok) {
-      throw new Error("no token provided");
-    }
-
-    const token = await prisma.token.findUnique({ where: { token: tok } });
-    if (token === null) {
-      throw new Error("invalid token");
-    }
-
-    const poll = await prisma.poll.create({
-      data: {
-        title,
-        options: {
-          createMany: {
-            data: options.map((i: string) => ({
-              name: i,
-            })),
-          },
-        },
-        channel,
-        othersCanAdd,
-        multipleVotes,
-        createdBy: token.user,
-      },
-      include: { options: { select: { id: true, name: true } } },
-    });
-
-    let timestamp;
-    try {
-      const p = await postPoll(poll);
-      timestamp = p.timestamp;
-    } catch (e) {
-      console.error(`Error when posting poll: ${e}`);
-      return;
-    }
-    poll.timestamp = timestamp;
-
-    res.json({
-      ok: true,
-      message: "woop woop you did it",
-      poll,
-    });
-  } catch (err) {
-    res.status(500).json({
-      ok: false,
-      err: (err as Error).message,
-    });
-  }
-});
-
-receiver.router.post("/toggle/:id", express.json(), async (req, res) => {
-  try {
-    const tok = req.headers.authorization?.slice("Bearer ".length);
-    if (!tok) {
-      throw new Error("no token provided");
-    }
-
-    const token = await prisma.token.findUnique({ where: { token: tok } });
-    if (token === null) {
-      throw new Error("invalid token");
-    }
-
-    // Find poll
-    const poll = await prisma.poll.findUnique({
-      where: {
-        id: parseInt(req.params.id),
-      },
-    });
-    if (!poll) {
-      throw new Error("can't find poll");
-    }
-
-    await prisma.poll.update({
-      where: {
-        id: poll.id,
-      },
-      data: {
-        open: !poll.open,
-      },
-    });
-
-    await refreshPoll(poll.id);
-
-    res.json({
-      ok: true,
-      message: "woop woop you did it",
-    });
-  } catch (err) {
-    res.status(500).json({
-      ok: false,
-      err: (err as Error).message,
-    });
-  }
-});
-
-const app = new App({
+export const app = new App({
   token: process.env.SLACK_TOKEN,
   receiver,
-});
-
-export async function postPoll(poll: Poll): Promise<Poll> {
-  const resp = await app.client.chat.postMessage({
-    blocks: message(await getPoll(poll.id)),
-    text: "This message can't be displayed in your client.",
-    channel: poll.channel,
-    token: process.env.SLACK_TOKEN,
-  });
-
-  poll = await prisma.poll.update({
-    where: {
-      id: poll.id,
-    },
-    data: {
-      timestamp: resp.message?.ts,
-    },
-  });
-
-  if (poll.createdBy) {
-    await app.client.chat.postEphemeral({
-      text: `Poll successfully created! Run \`/denopoll-toggle ${poll.id}\` to close the poll once you're done.`,
-      blocks: JSXSlack(
-        <Blocks>
-          <Section>
-            Poll successfully created! Run{" "}
-            <code>/denopoll-toggle {poll.id}</code> to close the poll once
-            you're done.
-            <Button actionId="dinoFact">:sauropod:</Button>
-          </Section>
-          <Context>
-            :information_source: Remember to save your poll's ID (
-            <code>{poll.id}</code>) if you'd like to close it later.
-          </Context>
-        </Blocks>
-      ),
-      channel: poll.channel,
-      user: poll.createdBy,
-      token: process.env.SLACK_TOKEN,
-    });
-  }
-
-  return poll;
-}
-
-app.action("dinoFact", async ({ ack, body, client }) => {
-  await ack();
-
-  await client.chat.postEphemeral({
-    channel: body.channel!.id!,
-    user: body.user.id,
-    text: `:sauropod: Here's a dinosaur fact:\n\n>>> ${randomDinoFact()}`,
-  });
 });
 
 app.command("/denopoll", async ({ client, ack, command }) => {
@@ -202,30 +30,30 @@ app.command("/denopolls", async ({ ack, respond, command }) => {
   const polls = await prisma.poll.findMany({
     where: {
       createdBy: command.user_id,
-      open: true
+      open: true,
     },
   });
 
-  let msg: { text: string, blocks: any } = {
+  let msg: { text: string; blocks: any } = {
     text: "",
-    blocks: undefined
+    blocks: undefined,
   };
 
   if (polls.length === 0) {
     msg.text = "You don't have any open polls.";
   } else {
     msg.text = `You have ${polls.length} open polls: `;
-    msg.blocks = []
-    
+    msg.blocks = [];
+
     msg.blocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: msg.text
-      }
+        text: msg.text,
+      },
     });
     msg.blocks.push({
-      type: "divider"
+      type: "divider",
     });
 
     polls.sort((a, b) => a.createdOn.getTime() - b.createdOn.getTime());
@@ -235,134 +63,28 @@ app.command("/denopolls", async ({ ack, respond, command }) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `<https://hackclub.slack.com/archives/${poll.channel}/p${poll.timestamp?.split(".").join("")}|_${poll.id}_>: *${poll.title}*`
+          text: `<https://hackclub.slack.com/archives/${
+            poll.channel
+          }/p${poll.timestamp?.split(".").join("")}|_${poll.id}_>: *${
+            poll.title
+          }*`,
         },
         accessory: {
           type: "button",
           text: {
             type: "plain_text",
             text: "Close",
-            emoji: true
+            emoji: true,
           },
           value: poll.id.toString(),
-          action_id: "togglePoll"
-        }
+          action_id: "togglePoll",
+        },
       });
     }
   }
 
   await respond(msg);
 });
-
-app.view("create", async ({ ack, body, view }) => {
-  const values = view.state.values;
-  const othersCanAdd = values.options.options.selected_options!.some(
-    (v: Option) => v.value === "othersCanAdd"
-  );
-
-  const opts = Object.entries(values)
-    .filter(([key]) => /option(\d+)/.test(key))
-    .map(([key, value]) => value[key].value)
-    .filter((i): i is string => !!i);
-
-  if (opts.length < 2 && !othersCanAdd) {
-    await ack({
-      response_action: "errors",
-      errors: {
-        option1:
-          'You need at least 2 options to create a poll, unless "Let others add options" is checked',
-      },
-    });
-    return;
-  }
-
-  if (!checkInput(values.title.title.value!)) {
-    await ack({
-      response_action: "errors",
-      errors: {
-        title:
-          "You are not in the sudoers file. This incident will be reported.",
-      },
-    });
-    return;
-  }
-
-  const invalidOpts = opts.filter((opt) => !checkInput(opt));
-
-  if (invalidOpts.length !== 0) {
-    await ack({
-      response_action: "errors",
-      errors: invalidOpts.reduce<Record<`option${number}`, string>>(
-        (acc, _curr, idx) => {
-          acc[`option${idx + 1}`] =
-            "You are not in the sudoers file. This incident will be reported.";
-          return acc;
-        },
-        {}
-      ),
-    });
-
-    return;
-  }
-
-  await ack();
-
-  const poll = await prisma.poll.create({
-    data: {
-      createdBy: body.user.id,
-      title: values.title.title.value!,
-      anonymous: values.options.options.selected_options?.some(
-        (v) => v.value === "anonymous"
-      ),
-      multipleVotes: values.options.options.selected_options?.some(
-        (v) => v.value === "multipleVotes"
-      ),
-      othersCanAdd,
-      channel: JSON.parse(view.private_metadata).channel,
-      options: {
-        createMany: {
-          data: opts.map((name) => ({ name })),
-        },
-      },
-    },
-  });
-
-  try {
-    await postPoll(poll);
-  } catch (e) {
-    console.error(`Error when posting poll: ${e}`);
-    return;
-  }
-});
-
-async function togglePoll(id: string, user: string) {
-  try {
-    const poll = await prisma.poll.findFirst({
-      where: {
-        id: parseInt(id),
-        createdBy: user,
-      },
-    });
-
-    if (!poll) {
-      return null;
-    }
-
-    await prisma.poll.update({
-      where: {
-        id: poll.id,
-      },
-      data: {
-        open: !poll.open,
-      },
-    });
-
-    await refreshPoll(poll.id);
-    return poll;
-  } catch (e) {
-    throw e
-  }
-}
 
 app.command("/denopoll-toggle", async ({ ack, command }) => {
   try {
@@ -375,6 +97,16 @@ app.command("/denopoll-toggle", async ({ ack, command }) => {
   } catch (e) {
     await ack("something went wrong :cry:");
   }
+});
+
+app.action("dinoFact", async ({ ack, body, client }) => {
+  await ack();
+
+  await client.chat.postEphemeral({
+    channel: body.channel!.id!,
+    user: body.user.id,
+    text: `:sauropod: Here's a dinosaur fact:\n\n>>> ${randomDinoFact()}`,
+  });
 });
 
 app.action(/vote:(.+):(.+)/, async ({ action, ack, body }) => {
@@ -493,7 +225,7 @@ app.action(/addOption:(.+)/, async ({ ack, action, client, ...args }) => {
         <Input type="hidden" name="poll" value={pollId} />
 
         <Input type="submit" value="Add" />
-      </Modal>
+      </Modal>,
     ),
   });
 });
@@ -504,7 +236,7 @@ app.action("modalAddOption", async ({ ack, client, ...args }) => {
   const body = args.body as BlockAction;
 
   const { channel, optionCount } = JSON.parse(
-    body.view?.private_metadata as string
+    body.view?.private_metadata as string,
   );
 
   client.views.update({
@@ -519,7 +251,7 @@ app.action("togglePoll", async ({ ack, client, respond, ...args }) => {
   const body = args.body as BlockAction;
 
   // @ts-ignore
-  const poll = body.actions[0].value
+  const poll = body.actions[0].value;
 
   try {
     const toggle = await togglePoll(poll, body.user.id);
@@ -529,7 +261,88 @@ app.action("togglePoll", async ({ ack, client, respond, ...args }) => {
 
     respond("success!");
   } catch (e) {
-    respond("something went wrong :cry:")
+    respond("something went wrong :cry:");
+  }
+});
+
+app.view("create", async ({ ack, body, view }) => {
+  const values = view.state.values;
+  const othersCanAdd = values.options.options.selected_options!.some(
+    (v: Option) => v.value === "othersCanAdd",
+  );
+
+  const opts = Object.entries(values)
+    .filter(([key]) => /option(\d+)/.test(key))
+    .map(([key, value]) => value[key].value)
+    .filter((i): i is string => !!i);
+
+  if (opts.length < 2 && !othersCanAdd) {
+    await ack({
+      response_action: "errors",
+      errors: {
+        option1:
+          'You need at least 2 options to create a poll, unless "Let others add options" is checked',
+      },
+    });
+    return;
+  }
+
+  if (!checkInput(values.title.title.value!)) {
+    await ack({
+      response_action: "errors",
+      errors: {
+        title:
+          "You are not in the sudoers file. This incident will be reported.",
+      },
+    });
+    return;
+  }
+
+  const invalidOpts = opts.filter((opt) => !checkInput(opt));
+
+  if (invalidOpts.length !== 0) {
+    await ack({
+      response_action: "errors",
+      errors: invalidOpts.reduce<Record<`option${number}`, string>>(
+        (acc, _curr, idx) => {
+          acc[`option${idx + 1}`] =
+            "You are not in the sudoers file. This incident will be reported.";
+          return acc;
+        },
+        {},
+      ),
+    });
+
+    return;
+  }
+
+  await ack();
+
+  const poll = await prisma.poll.create({
+    data: {
+      createdBy: body.user.id,
+      title: values.title.title.value!,
+      anonymous: values.options.options.selected_options?.some(
+        (v) => v.value === "anonymous",
+      ),
+      multipleVotes: values.options.options.selected_options?.some(
+        (v) => v.value === "multipleVotes",
+      ),
+      othersCanAdd,
+      channel: JSON.parse(view.private_metadata).channel,
+      options: {
+        createMany: {
+          data: opts.map((name) => ({ name })),
+        },
+      },
+    },
+  });
+
+  try {
+    await postPoll(poll);
+  } catch (e) {
+    console.error(`Error when posting poll: ${e}`);
+    return;
   }
 });
 
@@ -570,36 +383,6 @@ app.view("addOption", async ({ view, body, ack }) => {
 
   await refreshPoll(poll.id);
 });
-
-async function getPoll(id: number): Promise<PollWithOptions> {
-  const poll = await prisma.poll.findUnique({
-    where: {
-      id,
-    },
-    include: {
-      options: {
-        orderBy: { id: "asc" },
-        include: { votes: { orderBy: { createdOn: "asc" } } },
-      },
-      _count: { select: { votes: true } },
-    },
-  });
-
-  return poll!;
-}
-
-async function refreshPoll(pollId: number) {
-  const poll = await getPoll(pollId);
-  if (!poll) return;
-
-  await app.client.chat.update({
-    token: process.env.SLACK_TOKEN,
-    text: "This message can't be displayed in your client.",
-    blocks: message(poll),
-    ts: poll.timestamp!,
-    channel: poll.channel,
-  });
-}
 
 async function main() {
   await app.start(parseInt(process.env.PORT as string) || 3000);

@@ -61,7 +61,7 @@ const InputBlocks = ({
 export default (
   channel: string,
   initialTitle: string,
-  optionCount = 4
+  optionCount = 4,
 ): View => {
   return JSXSlack(
     <Modal title="Create Poll" callbackId="create" close="Cancel">
@@ -79,6 +79,6 @@ export default (
       <Input type="hidden" name="optionCount" value={optionCount} />
 
       <Input type="submit" value="Create" />
-    </Modal>
+    </Modal>,
   );
 };
