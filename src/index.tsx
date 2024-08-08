@@ -35,7 +35,7 @@ app.command("/denopoll", async ({ client, ack, command }) => {
       await ack();
     })
     .catch(async (e) => {
-      if (e?.error === "channel_not_found") {
+      if (e.data?.error === "channel_not_found") {
         await ack({
           text: "This is a private channel - please add this app to it in the channel settings before creating a poll.",
         });
