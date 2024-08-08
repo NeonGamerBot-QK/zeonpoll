@@ -16,6 +16,17 @@ export const app = new App({
 });
 
 app.command("/denopoll", async ({ client, ack, command }) => {
+  const channelInfo = await client.conversations.info({
+    channel: command.channel_id,
+  });
+
+  if (channelInfo.error === "channel_not_found") {
+    await ack({
+      text: "This is a private channel - please add this app to it in the channel settings before creating a poll.",
+    });
+    return;
+  }
+
   await client.views.open({
     trigger_id: command.trigger_id,
     view: createPollModal(command.channel_id, command.text),

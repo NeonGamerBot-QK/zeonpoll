@@ -1,72 +1,76 @@
 {
-  "display_information": {
-      "name": "denopoll",
-      "description": "when dinopoll is down",
-      "background_color": "#2c2d30"
-  },
-  "features": {
-      "bot_user": {
-          "display_name": "denopoll",
-          "always_online": false
-      },
-      "shortcuts": [
-          {
-              "name": "Toggle Denopoll",
-              "type": "message",
-              "callback_id": "message-toggle",
-              "description": "Toggles the denopoll of the message"
-          }
-      ],
-      "slash_commands": [
-          {
-              "command": "/denopoll",
-              "url": "https://denopoll.underpass.clb.li/slack/events",
-              "description": "Create a Denopoll!",
-              "should_escape": false
-          },
-          {
-              "command": "/denopoll-toggle",
-              "url": "https://denopoll.underpass.clb.li/slack/events",
-              "description": "Toggle a Denopoll",
-              "should_escape": false
-          },
-          {
-              "command": "/denopolls",
-              "url": "https://denopoll.underpass.clb.li/slack/events",
-              "description": "Lists your open Denopolls",
-              "should_escape": false
-          }
-      ],
-      "workflow_steps": [
-          {
-              "name": "Create a poll",
-              "callback_id": "create_poll_workflow_step"
-          }
-      ]
-  },
-  "oauth_config": {
-      "scopes": {
-          "bot": [
-              "chat:write",
-              "chat:write.public",
-              "commands",
-              "workflow.steps:execute"
-          ]
-      }
-  },
-  "settings": {
-      "event_subscriptions": {
-          "request_url": "https://denopoll.underpass.clb.li/slack/events",
-          "bot_events": [
-              "workflow_step_execute"
-          ]
-      },
-      "interactivity": {
-          "is_enabled": true,
-          "request_url": "https://denopoll.underpass.clb.li/slack/events"
-      },
-      "org_deploy_enabled": false,
-      "socket_mode_enabled": false,
-      "token_rotation_enabled": false
-  }
+    "display_information": {
+        "name": "denopoll",
+        "description": "easy slack polls, created by hack clubbers!",
+        "background_color": "#2c2d30"
+    },
+    "features": {
+        "bot_user": {
+            "display_name": "denopoll",
+            "always_online": false
+        },
+        "shortcuts": [
+            {
+                "name": "Toggle Denopoll",
+                "type": "message",
+                "callback_id": "message-toggle",
+                "description": "Toggles the denopoll of the message"
+            }
+        ],
+        "slash_commands": [
+            {
+                "command": "/denopoll",
+                "url": "https://denopoll.samuel.hackclub.app/slack/events",
+                "description": "Create a Denopoll!",
+                "should_escape": false
+            },
+            {
+                "command": "/denopoll-toggle",
+                "url": "https://denopoll.samuel.hackclub.app/slack/events",
+                "description": "Toggle a Denopoll",
+                "should_escape": false
+            },
+            {
+                "command": "/denopolls",
+                "url": "https://denopoll.samuel.hackclub.app/slack/events",
+                "description": "Lists your open Denopolls",
+                "should_escape": false
+            }
+        ],
+        "workflow_steps": [
+            {
+                "name": "Create a poll",
+                "callback_id": "create_poll_workflow_step"
+            }
+        ]
+    },
+    "oauth_config": {
+        "scopes": {
+            "bot": [
+                "chat:write",
+                "chat:write.public",
+                "commands",
+                "workflow.steps:execute",
+                "channels:read",
+                "groups:read",
+                "mpim:read",
+                "im:read"
+            ]
+        }
+    },
+    "settings": {
+        "event_subscriptions": {
+            "request_url": "https://denopoll.samuel.hackclub.app/slack/events",
+            "bot_events": [
+                "workflow_step_execute"
+            ]
+        },
+        "interactivity": {
+            "is_enabled": true,
+            "request_url": "https://denopoll.samuel.hackclub.app/slack/events"
+        },
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": false,
+        "token_rotation_enabled": false
+    }
 }
