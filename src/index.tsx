@@ -1,6 +1,12 @@
 import "dotenv/config";
 
-import { App, BlockAction, BlockElementAction, Option, MessageShortcut } from "@slack/bolt";
+import {
+  App,
+  BlockAction,
+  BlockElementAction,
+  Option,
+  MessageShortcut,
+} from "@slack/bolt";
 import JSXSlack, { Input, Modal, Section } from "jsx-slack";
 
 import createPollModal from "./modal";
@@ -16,23 +22,26 @@ export const app = new App({
 });
 
 app.command("/denopoll", async ({ client, ack, command }) => {
-  const channelInfo = await client.conversations.info({
-    channel: command.channel_id,
-  });
-
-  if (channelInfo.error === "channel_not_found") {
-    await ack({
-      text: "This is a private channel - please add this app to it in the channel settings before creating a poll.",
+  await client.conversations
+    .info({
+      channel: command.channel_id,
+    })
+    .then(async () => {
+      await client.views.open({
+        trigger_id: command.trigger_id,
+        view: createPollModal(command.channel_id, command.text),
+      });
+    
+      await ack();
+    })
+    .catch(async (e) => {
+      if (e?.error === "channel_not_found") {
+        await ack({
+          text: "This is a private channel - please add this app to it in the channel settings before creating a poll.",
+        });
+        return;
+      }
     });
-    return;
-  }
-
-  await client.views.open({
-    trigger_id: command.trigger_id,
-    view: createPollModal(command.channel_id, command.text),
-  });
-
-  await ack();
 });
 
 app.command("/denopolls", async ({ ack, respond, command }) => {
@@ -276,7 +285,7 @@ app.action("togglePoll", async ({ ack, client, respond, ...args }) => {
   }
 });
 
-app.shortcut("message-toggle", async ({ack, client, ...args }) => {
+app.shortcut("message-toggle", async ({ ack, client, ...args }) => {
   await ack();
 
   const shortcut = args.body as MessageShortcut;
@@ -286,34 +295,34 @@ app.shortcut("message-toggle", async ({ack, client, ...args }) => {
     view: {
       callback_id: "message-toggle",
       private_metadata: JSON.stringify({
-        messageId: shortcut.message.ts
+        messageId: shortcut.message.ts,
       }),
       type: "modal",
       title: {
         type: "plain_text",
         text: "My App",
-        emoji: true
+        emoji: true,
       },
       submit: {
         type: "plain_text",
-        text: "Submit"
+        text: "Submit",
       },
       close: {
         type: "plain_text",
-        text: "Cancel"
+        text: "Cancel",
       },
       blocks: [
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "Are you sure you want to toggle this poll?"
-          }
-        }
-      ]
-    }
+            text: "Are you sure you want to toggle this poll?",
+          },
+        },
+      ],
+    },
   });
-})
+});
 
 app.view("create", async ({ ack, body, view }) => {
   const values = view.state.values;
@@ -450,7 +459,7 @@ app.view("message-toggle", async ({ ack, body, view }) => {
   }
 
   await togglePoll(poll.id.toString(), body.user.id);
-})
+});
 
 async function main() {
   await app.start(parseInt(process.env.PORT as string) || 3000);
