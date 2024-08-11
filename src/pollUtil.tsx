@@ -53,10 +53,6 @@ export async function postPoll(poll: Poll): Promise<Poll> {
             you're done.
             <Button actionId="dinoFact">:sauropod:</Button>
           </Section>
-          <Context>
-            :information_source: Remember to save your poll's ID (
-            <code>{poll.id}</code>) if you'd like to close it later.
-          </Context>
         </Blocks>,
       ),
       channel: poll.channel,
