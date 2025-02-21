@@ -12,6 +12,9 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/dinopoll
     restart: always
+    depends_on:
+      db:
+        condition: service_started
   db:
     image: postgres:alpine
     environment:
@@ -20,13 +23,5 @@ services:
       POSTGRES_DB: dinopoll
     volumes:
       - "db_volume:/var/lib/postgresql/data"
-  pgweb:
-    image: sosedoff/pgweb
-    ports:
-      - "3002:8081"
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/dinopoll?sslmode=disable
-    depends_on:
-      - db
 volumes:
   db_volume:
