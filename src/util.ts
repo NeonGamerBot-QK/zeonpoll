@@ -8,7 +8,8 @@ export function checkInput(i: string): boolean {
     i.toLowerCase().includes("<!here>") ||
     i.toLowerCase().includes("subteam")  ||
     i.toLowerCase().includes("<!subteam>") ||
-    i.toLowerCase().includes("<@") 
+    i.toLowerCase().includes("<@") ||
+    i.startsWith("@")
   ) {
     return false;
   }

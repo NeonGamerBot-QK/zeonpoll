@@ -54,7 +54,7 @@ export default (poll: PollWithOptions): (Block | KnownBlock)[] => {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `:${poll.open ? "clipboard" : "lock"}: *${poll.title}*${
+        text: `:neocat_box: :${poll.open ? "clipboard" : "lock"}: *${poll.title}*${
           tags.length > 0 ? " (" + tags.join(", ") + ")" : ""
         }`,
       },
@@ -71,13 +71,13 @@ export default (poll: PollWithOptions): (Block | KnownBlock)[] => {
         text: {
           type: "mrkdwn",
           text: `${
-            opt === mostVotes && !poll.open ? ":white_check_mark: " : ""
+            opt === mostVotes && !poll.open ? ":neocat_sign_yes:  " : ""
           }${opt.name} _(${opt.votes.length} vote${
             opt.votes.length === 1 ? "" : "s"
           }, *${percentage}%*)_${
             !poll.anonymous
             //@ts-ignore
-              ? "\n" + opt.votes.map((i) => "<@" + i.user + ">").join(", ")
+              ? "\n" + opt.votes.map((i) => i.user.startsWith("U") ? "<" + i.user + ">" : ""+i.user).join(", ")
               : ""
           }${buildProgressBar(percentage / 100, 30)}`,
         },

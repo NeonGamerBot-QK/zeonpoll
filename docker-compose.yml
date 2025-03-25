@@ -5,9 +5,40 @@ services:
     build: .
     container_name: my-node-app
     ports:
-      - "3000:3000"
+      - "3660:3000"
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
       - /usr/src/app/dist
     command: [ "sh", "-c", "yarn build && yarn prisma generate && yarn prisma db push && yarn start" ]
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/mydatabase
+    networks:
+      my-custom-network:
+        ipv4_address: 192.118.100.100
+
+  db:
+    image: postgres:16
+    container_name: my-postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      my-custom-network:
+        ipv4_address: 192.118.100.101
+
+networks:
+  my-custom-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.118.100.0/24
+
+volumes:
+  pgdata:

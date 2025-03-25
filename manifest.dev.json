@@ -48,6 +48,7 @@
             "bot": [
                 "channels:read",
                 "chat:write",
+                "users:read",
                 "chat:write.public",
                 "commands",
                 "groups:read",

@@ -1,0 +1,77 @@
+{
+    "display_information": {
+        "name": "zeonpoll",
+        "description": "easy slack polls, created by hack clubbers!",
+        "background_color": "#2c2d30"
+    },
+    "features": {
+        "app_home": {
+            "home_tab_enabled": true,
+            "messages_tab_enabled": false,
+            "messages_tab_read_only_enabled": false
+        },
+        "bot_user": {
+            "display_name": "zeonpoll",
+            "always_online": true
+        },
+        "shortcuts": [
+            {
+                "name": "Toggle zeonpoll",
+                "type": "message",
+                "callback_id": "message-toggle",
+                "description": "Toggles the denopoll of the message"
+            }
+        ],
+        "slash_commands": [
+            {
+                "command": "/zpoll",
+                "url": "http://167.86.73.55:3660/slack/events",
+                "description": "Create a Denopoll!",
+                "should_escape": false
+            },
+            {
+                "command": "/zpoll-toggle",
+                "url": "http://167.86.73.55:3660/slack/events",
+                "description": "Toggle a Denopoll",
+                "should_escape": false
+            },
+            {
+                "command": "/zpolls",
+                "url": "http://167.86.73.55:3660/slack/events",
+                "description": "Lists your open Denopolls",
+                "should_escape": false
+            }
+        ]
+    },
+    "oauth_config": {
+        "scopes": {
+            "bot": [
+                "channels:read",
+                "chat:write",
+                "chat:write.public",
+                "commands",
+                "groups:read",
+                "im:read",
+                "users:read",
+                "mpim:read",
+                "workflow.steps:execute",
+                "chat:write.customize"
+            ]
+        }
+    },
+    "settings": {
+        "event_subscriptions": {
+            "request_url": "http://167.86.73.55:3660/slack/events",
+            "bot_events": [
+                "app_home_opened"
+            ]
+        },
+        "interactivity": {
+            "is_enabled": true,
+            "request_url": "http://167.86.73.55:3660/slack/events"
+        },
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": false,
+        "token_rotation_enabled": false
+    }
+}

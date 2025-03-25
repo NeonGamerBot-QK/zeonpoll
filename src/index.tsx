@@ -37,7 +37,7 @@ app.command("/zpoll", async ({ client, ack, command }) => {
     .catch(async (e) => {
       if (e.data?.error === "channel_not_found") {
         await ack({
-          text: "This is a private channel - please add this app to it in the channel settings before creating a poll.",
+          text: ":neocat_angry: This is a private channel - please add this app to it in the channel settings before creating a poll.",
         });
         return;
       }
@@ -60,9 +60,9 @@ app.command("/zpolls", async ({ ack, respond, command }) => {
   };
 
   if (polls.length === 0) {
-    msg.text = "You don't have any open polls.";
+    msg.text = ":neocat_3c: You don't have any open polls.";
   } else {
-    msg.text = `You have ${polls.length} open polls: `;
+    msg.text = `:neocat_box: You have ${polls.length} open polls: `;
     msg.blocks = [];
 
     msg.blocks.push({
@@ -150,14 +150,18 @@ app.action(/vote:(.+):(.+)/, async ({ action, ack, body }) => {
   if (!poll || !poll.open) {
     return;
   }
-
+  const user = await app.client.users.info({
+    token: process.env.SLACK_TOKEN,
+    user: body.user.id,
+  });
   if (poll.multipleVotes) {
     // the poll allows for multiple votes
+    // get users username 
 
     // check to see if the user's already voted for this option
     const userVote = await prisma.vote.findUnique({
       where: {
-        user_optionId: { user: body.user.id, optionId: parseInt(optionId) },
+        user_optionId: { user: user.user?.real_name || user.user?.name || body.user.id, optionId: parseInt(optionId) },
       },
       include: { option: true },
     });
@@ -175,7 +179,7 @@ app.action(/vote:(.+):(.+)/, async ({ action, ack, body }) => {
     // Check to see if the user's already voted
     const userVote = await prisma.vote.findFirst({
       where: {
-        user: body.user.id,
+        user: user.user?.real_name || user.user?.name || body.user.id,
         pollId: parseInt(pollId),
       },
       include: {
@@ -200,7 +204,7 @@ app.action(/vote:(.+):(.+)/, async ({ action, ack, body }) => {
   // We've reached the end, so VOTE!!!
   await prisma.vote.create({
     data: {
-      user: body.user.id,
+      user: user.user?.real_name || user.user?.name || body.user.id,
       optionId: parseInt(optionId),
       pollId: poll.id,
     },
@@ -276,7 +280,7 @@ app.action("togglePoll", async ({ ack, client, respond, ...args }) => {
   try {
     const toggle = await togglePoll(poll, body.user.id);
     if (toggle === null) {
-      return await respond("poll not found.");
+      return await respond(":neocat_box: poll not found.");
     }
 
     respond(`:neocat_thumbsup: success, poll ${toggle.id} is now ${toggle.open ? "open" : "closed"}!`);
@@ -340,7 +344,7 @@ app.view("create", async ({ ack, body, view }) => {
       response_action: "errors",
       errors: {
         option1:
-          'You need at least 2 options to create a poll, unless "Let others add options" is checked',
+          ':neocat_angry: You need at least 2 options to create a poll, unless "Let others add options" is checked',
       },
     });
     return;
@@ -351,7 +355,7 @@ app.view("create", async ({ ack, body, view }) => {
       response_action: "errors",
       errors: {
         title:
-          "xkcd.com/838/",
+          ":neocat_angry: xkcd.com/838/",
       },
     });
     return;
@@ -365,7 +369,7 @@ app.view("create", async ({ ack, body, view }) => {
       errors: invalidOpts.reduce<Record<`option${number}`, string>>(
         (acc, _curr, idx) => {
           acc[`option${idx + 1}`] =
-            "xkcd.com/838/";
+            ":neocat_angry:  xkcd.com/838/";
           return acc;
         },
         {},
@@ -401,7 +405,7 @@ app.view("create", async ({ ack, body, view }) => {
   try {
     await postPoll(poll);
   } catch (e) {
-    console.error(`Error when posting poll: ${e}`);
+    console.error(`:neocat_cry: Error when posting poll: ${e}`);
     return;
   }
 });

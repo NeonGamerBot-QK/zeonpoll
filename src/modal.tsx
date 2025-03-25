@@ -13,9 +13,9 @@ import JSXSlack, {
 
 const placeholderOptions = [
   "Orpheus",
-  "Steggy",
-  "Caleb Deniosaur",
-  "Rishiosaur",
+  "Zeon",
+  "Neon",
+  "Denopoll",
 ];
 
 const InputBlocks = ({
