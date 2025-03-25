@@ -1,17 +1,22 @@
 {
     "display_information": {
-        "name": "denopoll",
+        "name": "zeonpoll",
         "description": "easy slack polls, created by hack clubbers!",
         "background_color": "#2c2d30"
     },
     "features": {
+        "app_home": {
+            "home_tab_enabled": true,
+            "messages_tab_enabled": false,
+            "messages_tab_read_only_enabled": false
+        },
         "bot_user": {
-            "display_name": "denopoll",
-            "always_online": false
+            "display_name": "zeonpoll",
+            "always_online": true
         },
         "shortcuts": [
             {
-                "name": "Toggle Denopoll",
+                "name": "Toggle zeonpoll",
                 "type": "message",
                 "callback_id": "message-toggle",
                 "description": "Toggles the denopoll of the message"
@@ -19,55 +24,50 @@
         ],
         "slash_commands": [
             {
-                "command": "/denopoll",
-                "url": "https://denopoll.samuel.hackclub.app/slack/events",
+                "command": "/zpoll",
+                "url": "https://kurafuto.korat-alsephina.ts.net/slack/events",
                 "description": "Create a Denopoll!",
                 "should_escape": false
             },
             {
-                "command": "/denopoll-toggle",
-                "url": "https://denopoll.samuel.hackclub.app/slack/events",
+                "command": "/zpoll-toggle",
+                "url": "https://kurafuto.korat-alsephina.ts.net/slack/events",
                 "description": "Toggle a Denopoll",
                 "should_escape": false
             },
             {
-                "command": "/denopolls",
-                "url": "https://denopoll.samuel.hackclub.app/slack/events",
+                "command": "/zpolls",
+                "url": "https://kurafuto.korat-alsephina.ts.net/slack/events",
                 "description": "Lists your open Denopolls",
                 "should_escape": false
-            }
-        ],
-        "workflow_steps": [
-            {
-                "name": "Create a poll",
-                "callback_id": "create_poll_workflow_step"
             }
         ]
     },
     "oauth_config": {
         "scopes": {
             "bot": [
+                "channels:read",
                 "chat:write",
                 "chat:write.public",
                 "commands",
-                "workflow.steps:execute",
-                "channels:read",
                 "groups:read",
+                "im:read",
                 "mpim:read",
-                "im:read"
+                "workflow.steps:execute",
+                "chat:write.customize"
             ]
         }
     },
     "settings": {
         "event_subscriptions": {
-            "request_url": "https://denopoll.samuel.hackclub.app/slack/events",
+            "request_url": "https://kurafuto.korat-alsephina.ts.net/slack/events",
             "bot_events": [
-                "workflow_step_execute"
+                "app_home_opened"
             ]
         },
         "interactivity": {
             "is_enabled": true,
-            "request_url": "https://denopoll.samuel.hackclub.app/slack/events"
+            "request_url": "https://kurafuto.korat-alsephina.ts.net/slack/events"
         },
         "org_deploy_enabled": false,
         "socket_mode_enabled": false,

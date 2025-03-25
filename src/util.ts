@@ -5,7 +5,10 @@ export function checkInput(i: string): boolean {
     i.toLowerCase().includes("@everyone") ||
     i.toLowerCase().includes("<!everyone>") ||
     i.toLowerCase().includes("@here") ||
-    i.toLowerCase().includes("<!here>")
+    i.toLowerCase().includes("<!here>") ||
+    i.toLowerCase().includes("subteam")  ||
+    i.toLowerCase().includes("<!subteam>") ||
+    i.toLowerCase().includes("<@") 
   ) {
     return false;
   }

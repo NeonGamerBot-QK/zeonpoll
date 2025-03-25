@@ -25,6 +25,7 @@ receiver.router.post("/create", express.json(), async (req, res) => {
       data: {
         title,
         options: {
+          //@ts-ignore 
           createMany: {
             data: options.map((i: string) => ({
               name: i,

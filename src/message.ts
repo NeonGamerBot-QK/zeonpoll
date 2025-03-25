@@ -27,6 +27,7 @@ export default (poll: PollWithOptions): (Block | KnownBlock)[] => {
   let mostVotes: PollOptionWithVotes | null =
     poll.options.length === 0
       ? null
+      //@ts-ignore
       : poll.options.reduce((acc, curr) => {
           if (curr.votes.length > acc.votes.length) {
             return curr;
@@ -58,6 +59,7 @@ export default (poll: PollWithOptions): (Block | KnownBlock)[] => {
         }`,
       },
     },
+    //@ts-ignore
     ...poll.options.map((opt): Block | KnownBlock => {
       let percentage = Math.round((opt.votes.length / poll._count.votes) * 100);
       if (isNaN(percentage)) {
@@ -74,6 +76,7 @@ export default (poll: PollWithOptions): (Block | KnownBlock)[] => {
             opt.votes.length === 1 ? "" : "s"
           }, *${percentage}%*)_${
             !poll.anonymous
+            //@ts-ignore
               ? "\n" + opt.votes.map((i) => "<@" + i.user + ">").join(", ")
               : ""
           }${buildProgressBar(percentage / 100, 30)}`,
@@ -112,7 +115,7 @@ export default (poll: PollWithOptions): (Block | KnownBlock)[] => {
         {
           type: "mrkdwn",
           text: poll.createdBy
-            ? `Created by <@${poll.createdBy}> with \`/denopoll\``
+            ? `Created by <@${poll.createdBy}> with \`/zpoll\``
             : "Created with the Denopoll workflow step",
         },
       ],

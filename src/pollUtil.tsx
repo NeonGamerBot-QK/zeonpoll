@@ -1,3 +1,4 @@
+//@ts-ignore
 import { Poll } from "@prisma/client";
 import JSXSlack, {
   Blocks,
@@ -44,12 +45,12 @@ export async function postPoll(poll: Poll): Promise<Poll> {
 
   if (poll.createdBy) {
     await app.client.chat.postEphemeral({
-      text: `Poll successfully created! Run \`/denopoll-toggle ${poll.id}\` to close the poll once you're done.`,
+      text: `Poll successfully created! Run \`/zpoll-toggle ${poll.id}\` to close the poll once you're done.`,
       blocks: JSXSlack(
         <Blocks>
           <Section>
             Poll successfully created! Run{" "}
-            <code>/denopoll-toggle {poll.id}</code> to close the poll once
+            <code>/zpoll-toggle {poll.id}</code> to close the poll once
             you're done.
             <Button actionId="dinoFact">:sauropod:</Button>
           </Section>

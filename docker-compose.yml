@@ -1,27 +1,13 @@
-version: "3"
+version: '3.8'
+
 services:
-  main:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  app:
+    build: .
+    container_name: my-node-app
     ports:
-      - "2345:2345"
+      - "3000:3000"
     volumes:
-      - ".:/usr/src/app"
-    env_file: .env
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/dinopoll
-    restart: always
-    depends_on:
-      db:
-        condition: service_started
-  db:
-    image: postgres:alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dinopoll
-    volumes:
-      - "db_volume:/var/lib/postgresql/data"
-volumes:
-  db_volume:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/dist
+    command: [ "sh", "-c", "yarn build && yarn prisma generate && yarn prisma db push && yarn start" ]
